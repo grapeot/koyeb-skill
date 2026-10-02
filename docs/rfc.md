@@ -1,9 +1,9 @@
 # RFC: Technical Architecture & Specification for Koyeb Skill
 
 **RFC Identifier**: RFC-20261002-KOYEB-SKILL
-**Status**: Proposed / Scaffold Contract
-**Target Root Skill**: `skills/koyeb/SKILL.md`
-**Planned Script**: `scripts/koyeb_env.py`
+**Status**: Implemented; Offline Tests and Read-Only CLI Smoke Verified
+**Root Skill**: `skills/koyeb/SKILL.md`
+**Launcher Script**: `scripts/koyeb_env.py`
 
 ---
 

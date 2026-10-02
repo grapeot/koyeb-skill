@@ -2,7 +2,7 @@
 
 **Repository Identity**: `grapeot/koyeb-skill`
 **Root Skill Target**: `skills/koyeb/SKILL.md`
-**Status**: Scaffold Contract
+**Status**: Implemented; Offline Tests and Read-Only CLI Smoke Verified
 **Date**: 2026-10-02
 
 ---
@@ -54,7 +54,7 @@ This project delivers a **public, Markdown-first skill and a minimal standard-li
 - **FR-1.3**: Inject the resolved credential as `KOYEB_TOKEN` into the child environment.
 - **FR-1.4**: Fail closed immediately if `KOYEB_API_KEY` is missing or empty.
 - **FR-1.5**: Prohibit dangerous CLI flags: reject `--token`, `--debug-full`, and alternate endpoint `--url` to prevent accidental token override, exfiltration, or diagnostic leaks.
-- **FR-1.6**: Sanitize all subprocess failure messages, masking tokens and suppressing raw `op` stderr.
+- **FR-1.6**: Omit credential values from launcher diagnostics and suppress failed `op` output. Preserve native CLI output rather than promising blanket redaction.
 
 ### FR-2: Resource Inventory & Inspection
 - **FR-2.1**: Support structured discovery of applications (`koyeb apps list`), services (`koyeb services list`), deployments (`koyeb deployments list`), instances (`koyeb instances list`), domains (`koyeb domains list`), and secrets (`koyeb secrets list`).

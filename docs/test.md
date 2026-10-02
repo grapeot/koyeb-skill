@@ -1,9 +1,9 @@
 # Test Strategy & Quality Assurance Plan
 
 **Project**: Koyeb Skill (`grapeot/koyeb-skill`)
-**Status**: Scaffold Contract
+**Status**: Offline Suite and Read-Only CLI Smoke Verified
 **Target Test Suite**: `tests/test_koyeb_env.py`
-**Planned Evals**: `evals/evals.json`
+**Evaluations**: `evals/evals.json`
 
 ---
 
@@ -22,7 +22,7 @@
 
 ## 2. Unit Test Matrix (`tests/test_koyeb_env.py`)
 
-The planned unit test suite will use Python's built-in `unittest` framework to validate `scripts/koyeb_env.py`.
+The unit test suite (`tests/test_koyeb_env.py`) uses Python's built-in `unittest` framework to validate `scripts/koyeb_env.py`. All 12 tests passed on 2026-10-02. Read-only CLI 5.12.0 smoke checks passed for credential resolution, resource inspection, service listing, and bounded lifecycle logs. Scenario prompts are authored, not cross-harness benchmark results.
 
 | Test ID | Test Category | Target Behavior | Expected Outcome |
 | :--- | :--- | :--- | :--- |
@@ -47,42 +47,13 @@ The planned unit test suite will use Python's built-in `unittest` framework to v
 
 ## 3. Agent Evaluation Scenarios (`evals/evals.json`)
 
-To ensure AI agents understand and adhere to the skill guidelines, an evals test harness will evaluate agent performance across standard prompts:
+To ensure AI agents understand and adhere to the skill guidelines, 5 evaluation scenarios are defined in `evals/evals.json`:
 
-```json
-[
-  {
-    "id": "eval-inventory-discovery",
-    "prompt": "List all active Koyeb services in the example-app application and report their status.",
-    "expected_tool": "python3 scripts/koyeb_env.py -- services list --app example-app -o json",
-    "assertions": [
-      "agent_uses_launcher",
-      "agent_does_not_pass_token_flag",
-      "agent_parses_json_output"
-    ]
-  },
-  {
-    "id": "eval-sleep-configuration",
-    "prompt": "Configure example-app/example-service to enter Light Sleep after five idle minutes and disable Deep Sleep.",
-    "expected_tool": "python3 scripts/koyeb_env.py -- services update example-service --app example-app --light-sleep-delay 5m --deep-sleep-delay 0 --min-scale 0",
-    "assertions": [
-      "agent_includes_min_scale_zero",
-      "agent_distinguishes_light_and_deep_sleep",
-      "agent_verifies_update_result"
-    ]
-  },
-  {
-    "id": "eval-deployment-verification",
-    "prompt": "Trigger a redeploy of example-service using the previous build and verify it is live.",
-    "expected_tool": "python3 scripts/koyeb_env.py -- services redeploy example-service --app example-app --skip-build",
-    "assertions": [
-      "agent_uses_skip_build",
-      "agent_polls_deployment_status_until_running",
-      "agent_does_not_stop_at_save_only"
-    ]
-  }
-]
-```
+1. **`eval-inventory-discovery`**: Query services in `example-app` with `-o json` without inventing `--limit` or exposing credentials.
+2. **`eval-sleep-configuration`**: Configure 5m Light Sleep, 0 Deep Sleep, and `--min-scale 0` with `--skip-build`.
+3. **`eval-deployment-verification`**: Trigger a redeployment using `--skip-build` and verify the deployment reaches `HEALTHY` (distinguishing from `save-only`).
+4. **`eval-runtime-secret-attachment`**: Create a secret via stdin and attach it to a service environment using `{{secret.DATABASE_URL}}` interpolation syntax.
+5. **`eval-historical-diagnostics`**: Query runtime logs using bounded ISO 8601 UTC timestamps with `--type runtime` (treating `--tail` as a boolean).
 
 ---
 

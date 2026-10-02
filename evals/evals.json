@@ -1,0 +1,68 @@
+[
+  {
+    "id": "eval-inventory-discovery",
+    "prompt": "Discover all active services in the application 'example-app' and report their current health and active deployment IDs.",
+    "expected_command": "python3 scripts/koyeb_env.py -- services list --app example-app -o json",
+    "expected_assertions": [
+      "agent_uses_launcher",
+      "agent_scopes_with_app_flag",
+      "agent_requests_json_output",
+      "agent_does_not_pass_token_in_argv",
+      "agent_parses_status_and_deployment_id"
+    ],
+    "guidelines": "Query services with explicit --app flag and parse structured JSON. Do not invent pagination flags like --limit or --offset."
+  },
+  {
+    "id": "eval-sleep-configuration",
+    "prompt": "Configure the service 'example-service' in 'example-app' to enter Light Sleep after 5 minutes of idle time, disable Deep Sleep, and ensure autoscaling allows sleeping to zero.",
+    "expected_command": "python3 scripts/koyeb_env.py -- services update example-app/example-service --light-sleep-delay 5m --deep-sleep-delay 0 --min-scale 0 --skip-build --wait",
+    "expected_assertions": [
+      "agent_uses_launcher",
+      "agent_sets_min_scale_zero",
+      "agent_configures_light_sleep_delay",
+      "agent_disables_deep_sleep_with_zero",
+      "agent_uses_skip_build_for_config_update",
+      "agent_does_not_invent_idle_timeout_flags"
+    ],
+    "guidelines": "Configure light sleep to 5m, deep sleep to 0, and min-scale to 0. Use --skip-build to avoid image rebuild."
+  },
+  {
+    "id": "eval-deployment-verification",
+    "prompt": "Trigger a redeploy of 'example-app/example-service' reusing the existing image build, wait for completion, and verify that the new deployment reaches HEALTHY state.",
+    "expected_command": "python3 scripts/koyeb_env.py -- services redeploy example-app/example-service --skip-build --wait",
+    "expected_assertions": [
+      "agent_uses_launcher",
+      "agent_uses_redeploy_with_skip_build",
+      "agent_waits_for_deployment_completion",
+      "agent_verifies_healthy_status_not_save_only",
+      "agent_reports_deployment_id"
+    ],
+    "guidelines": "Redeploy with --skip-build and --wait. Verify deployment reaches HEALTHY. Do not confuse --save-only with active deployment."
+  },
+  {
+    "id": "eval-runtime-secret-attachment",
+    "prompt": "Create a new secret named 'DATABASE_URL' from stdin and attach it to 'example-app/example-service' as an environment variable without revealing the secret value.",
+    "expected_command": "echo \"replace-with-your-key\" | python3 scripts/koyeb_env.py -- secrets create DATABASE_URL --value-from-stdin && python3 scripts/koyeb_env.py -- services update example-app/example-service --env 'DATABASE_URL={{secret.DATABASE_URL}}' --skip-build --wait",
+    "expected_assertions": [
+      "agent_uses_launcher",
+      "agent_passes_secret_value_via_stdin",
+      "agent_attaches_secret_via_interpolation_syntax",
+      "agent_does_not_call_secrets_reveal",
+      "agent_does_not_leak_secret_in_argv_or_logs"
+    ],
+    "guidelines": "Pipe secret content to stdin using --value-from-stdin. Reference secret using {{secret.DATABASE_URL}}. Never print secrets."
+  },
+  {
+    "id": "eval-historical-diagnostics",
+    "prompt": "Retrieve historical runtime logs for 'example-service' in 'example-app' between 2026-01-01T00:00:00Z and 2026-01-01T00:10:00Z to investigate container restarts.",
+    "expected_command": "python3 scripts/koyeb_env.py -- services logs example-service --app example-app --type runtime --start-time 2026-01-01T00:00:00Z --end-time 2026-01-01T00:10:00Z",
+    "expected_assertions": [
+      "agent_uses_launcher",
+      "agent_specifies_runtime_log_type",
+      "agent_uses_iso8601_utc_timestamps",
+      "agent_scopes_with_app_flag",
+      "agent_does_not_pass_numeric_tail"
+    ],
+    "guidelines": "Query historical runtime logs using bounded --start-time and --end-time. Note that --tail is a boolean flag, not a line count."
+  }
+]

@@ -1,7 +1,7 @@
 # Working State & Task Log
 
 **Repository**: `grapeot/koyeb-skill`
-**Current Phase**: Phase 1: Repository Scaffolding (Completed)
+**Current Phase**: Implementation Verified; Pull Request Pending
 **Last Updated**: 2026-10-02
 
 ---
@@ -10,12 +10,20 @@
 
 - **2026-10-02**: Initialized repository scaffold.
   - Created core repository contracts: `README.md`, `AGENTS.md`, `.gitignore`, `.env.example`, `LICENSE`.
-  - Created technical specification contracts in `docs/`:
-    - `docs/prd.md`: Product requirements, scope boundaries, and execution contracts.
-    - `docs/rfc.md`: Technical architecture, launcher specifications, and CLI v5.12.0 semantics.
-    - `docs/test.md`: Offline test matrix, evals plan, and real-world edge case scenarios.
-    - `docs/working.md`: Task tracker and milestone log.
-  - Implementation of `scripts/koyeb_env.py`, `tests/test_koyeb_env.py`, `skills/koyeb/SKILL.md`, and evals are intentionally pending Phase 2.
+  - Created technical specification contracts in `docs/`: `prd.md`, `rfc.md`, `test.md`, `working.md`.
+- **2026-10-02**: Authored complete skill, references, evals, and documentation updates.
+  - Created root skill `skills/koyeb/SKILL.md` (150 lines) with goal/outcome/resource/output-contract style.
+  - Authored modular reference modules under `skills/koyeb/references/`:
+    - `auth.md`: Launcher security boundary, strict `.env` parser grammar, 1Password `op read` integration, prohibited flags (`--token`, `--debug-full`, `--url`), and process exit codes.
+    - `inspect.md`: Structured querying (`-o json`), pagination caveats (absence of `--limit`/`--offset`), bounded historical log queries, and HTTP 404 interpretation.
+    - `changes.md`: Service updates, definition merging vs `--override`, image reuse via `--skip-build`, `--save-only` distinction, stdin secret creation, and custom domain CNAME discovery.
+    - `sleep.md`: Dual-tier Light/Deep sleep architecture, `--min-scale 0` requirement, disabling tiers with `0`, idle resets via data traffic, safe control-plane queries, and wake benchmarking.
+    - `fleet.md`: Multi-service orchestration, batch rollout protocols, stop-on-failure policy, external system boundaries, and resource deletion guardrails.
+  - Created `evals/evals.json` containing 5 realistic evaluation scenarios with assertion criteria.
+  - Authored pull request summary `.agent-pr-body.md`.
+  - Updated `README.md`, `AGENTS.md`, `docs/prd.md`, `docs/rfc.md`, and `docs/test.md` from scaffold to implemented status.
+   - **Verification Status**: All 12 offline tests passed. Read-only CLI 5.12.0 smoke checks verified 1Password resolution from a gitignored `.env`, service inspection, complete service listing, and bounded Light Sleep lifecycle log retrieval. No new live cloud mutations were performed during implementation verification.
+   - Fact-drift review corrected unsupported zero-downtime guarantees, sleep-mode inference from instance status, invented snapshot storage details, and the misleading claim that `redeploy --skip-build` selects a historical deployment for rollback.
 
 ---
 
@@ -32,39 +40,41 @@
 - [x] Author `docs/test.md` defining offline test suites, evals, and operational edge cases.
 - [x] Author `docs/working.md` establishing state tracking.
 
-### Phase 2: Launcher Implementation & Offline Testing (PENDING)
-- [ ] Implement `scripts/koyeb_env.py` using Python 3.10+ standard library only:
-  - [ ] Strict `.env` subset grammar parser.
-  - [ ] 1Password CLI `op read` integration via subprocess.
-  - [ ] Argument validator rejecting `--token`, `--debug-full`, and `--url`.
-  - [ ] Sanitized error reporting and token masking.
-  - [ ] Native child exit code and stdio preservation.
-- [ ] Implement `tests/test_koyeb_env.py` with offline subprocess stubs:
-  - [ ] Test literal token resolution.
-  - [ ] Test 1Password URI resolution.
-  - [ ] Test missing/empty token handling.
-  - [ ] Test prohibited flag interception.
-  - [ ] Test exit code propagation and argument forwarding.
+### Phase 2: Launcher Implementation & Offline Testing (VERIFIED)
+- [x] Implement `scripts/koyeb_env.py` using Python 3.10+ standard library only:
+   - [x] Strict `.env` subset grammar parser rejecting duplicate keys and never evaluating shell interpolation.
+  - [x] 1Password CLI `op read` integration via subprocess with 30s timeout and error suppression.
+  - [x] Argument validator rejecting `--token`, `--debug-full`, and `--url`.
+   - [x] Credential diagnostics omit values and suppress failed `op` output; native CLI streams remain unchanged.
+  - [x] Native child exit code and stdio preservation.
+- [x] Implement `tests/test_koyeb_env.py` with offline subprocess stubs (12 unit tests):
+  - [x] Test literal token resolution.
+  - [x] Test 1Password URI resolution.
+  - [x] Test missing/empty token handling.
+  - [x] Test prohibited flag interception.
+  - [x] Test exit code propagation and argument forwarding.
+- [x] Local offline suite executed and verified: 12 tests passed. Hosted CI will run on the implementation PR.
 
-### Phase 3: Skill Implementation (PENDING)
-- [ ] Implement root skill `skills/koyeb/SKILL.md` (~150-250 lines):
-  - [ ] Progressive disclosure routing.
-  - [ ] Launcher command shortcuts.
-  - [ ] Core guardrails and verification loop.
-- [ ] Implement reference modules:
-  - [ ] `skills/koyeb/references/auth.md`
-  - [ ] `skills/koyeb/references/inspect.md`
-  - [ ] `skills/koyeb/references/changes.md`
-  - [ ] `skills/koyeb/references/sleep.md`
-  - [ ] `skills/koyeb/references/fleet.md`
+### Phase 3: Skill Implementation (COMPLETED)
+- [x] Implement root skill `skills/koyeb/SKILL.md` (150 lines):
+  - [x] Goal / outcome / resource / output-contract style.
+  - [x] Progressive disclosure routing.
+  - [x] Launcher command shortcuts.
+  - [x] Core guardrails and verification loop.
+  - [x] Allowlisted output report example.
+- [x] Implement reference modules:
+  - [x] `skills/koyeb/references/auth.md`
+  - [x] `skills/koyeb/references/inspect.md`
+  - [x] `skills/koyeb/references/changes.md`
+  - [x] `skills/koyeb/references/sleep.md`
+  - [x] `skills/koyeb/references/fleet.md`
 
-### Phase 4: Evals & Agent Verification (PENDING)
-- [ ] Create `evals/evals.json` with scenario prompts and assertions.
-- [ ] Validate prompt parsing across target agent harnesses.
+### Phase 4: Evals Authored; Cross-Harness Benchmark Pending
+- [x] Create `evals/evals.json` with 5 realistic scenario prompts and assertion criteria.
+- [ ] Scenario prompt execution across target agent harnesses (pending verification by main).
 
 ### Phase 5: Publication & Integration (PENDING)
-- [ ] Optional read-only smoke validation against staging account.
-- [ ] Add root skill reference to agent index.
+- [x] Authorized read-only smoke validation with official CLI 5.12.0; no private fixtures or log contents published.
 - [ ] Final security audit and git commit.
 
 ---
