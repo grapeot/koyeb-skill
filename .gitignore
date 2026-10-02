@@ -1,0 +1,34 @@
+# Environment & Credential files
+.env
+.env.*
+!.env.example
+
+# Python virtual environment & bytecode
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+caches/
+
+# Logs & process output
+*.log
+logs/
+events.log
+stdout.txt
+stderr.txt
+.agy*
+
+# Scratch & local data
+data/
+local/
+tmp/
+
+# Agent execution & scaffold prompts
+.scaffold_prompt.md
+.implementation_prompt.md
+.agent*
+
+# Ensure test fixtures are explicitly preserved
+!tests/fixtures/**
