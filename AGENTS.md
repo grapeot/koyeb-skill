@@ -41,7 +41,7 @@ This repository is an English public, Markdown-first Koyeb operations skill (`gr
   - Tests must never require active internet access, live Koyeb accounts, or real 1Password vaults.
 - **Privacy & Leak Audits**:
   - Prior to completing any code change, verify that credentials are never passed via command line arguments (`sys.argv`), logged in plain text, stored in scratch files, or leaked via exception tracebacks.
-  - Subprocess error handling must explicitly sanitize `stdout` and `stderr`.
+  - Suppress raw `op` stdout/stderr on resolution failure. Native Koyeb CLI streams are intentionally preserved; do not claim blanket redaction or publish raw secret-reveal output.
 
 ---
 
@@ -58,7 +58,9 @@ This repository is an English public, Markdown-first Koyeb operations skill (`gr
 
 ## 5. Current Scope Discipline
 
-- **Scaffold Phase**:
-  - This repository is currently in the scaffold stage.
-  - Only write and maintain scaffold specification files: `README.md`, `AGENTS.md`, `.gitignore`, `.env.example`, `LICENSE`, and documents in `docs/`.
-  - Do not create source scripts (`scripts/koyeb_env.py`), test implementations (`tests/`), or skill Markdown files (`skills/`) until explicitly requested in the implementation phase.
+- **Implementation Phase Authorized**:
+  - The implementation phase has been explicitly authorized by the user.
+  - Deliverables include authoring the root skill (`skills/koyeb/SKILL.md`), reference guides (`skills/koyeb/references/`), scenario evaluations (`evals/evals.json`), pull request summary (`.agent-pr-body.md`), and updating repository documentation (`README.md`, `docs/`).
+  - Do not modify Python source (`scripts/koyeb_env.py`), existing unit tests (`tests/test_koyeb_env.py`), CI workflows, `.gitignore`, or `.env`.
+  - Maintain offline boundaries: never execute live Koyeb CLI mutations against production, never read `.env`, and never execute git publish or remote push commands.
+   - Keep verification status factual: offline tests and read-only CLI smoke checks passed; scenario prompts remain unbenchmarked unless actually executed.
