@@ -2,7 +2,7 @@
 
 **Repository Identity**: `grapeot/koyeb-skill`
 **Root Skill Target**: `skills/koyeb/SKILL.md`
-**Status**: Implemented; Offline Tests and Read-Only CLI Smoke Verified
+**Status**: Implemented; 17 Offline Tests and Read-Only Smoke Checks Verified
 **Date**: 2026-10-02
 
 ---
@@ -32,10 +32,10 @@ This project delivers a **public, Markdown-first skill and a minimal standard-li
 
 ## 3. Non-Goals
 
-- **No Custom Koyeb API Client or Server**: We do not implement a REST API client, gRPC wrapper, daemon, or web service.
+- **No Generic API Client or Server**: We do not implement a generic REST API client, gRPC wrapper, daemon, or web service. An explicit, narrow read-only exception is permitted solely for `scripts/request_metrics.py` to retrieve lossless HTTP request telemetry streams where the official CLI performs lossy zero-flattening.
 - **No Global Policy Mandates**: The skill does not enforce global defaults for sleep durations, replica counts, or fleet rollouts. Example configurations (e.g. 5m light / 0 deep sleep) are strictly illustrative.
 - **No Direct Cross-System Mutation**: The skill does not directly reconfigure external cloud databases, third-party DNS providers, or SSO identity providers; it outputs verified endpoints and refers to external runbooks.
-- **No Third-Party Python Dependencies**: The launcher must not require external pip packages; it must run under standard Python 3.10+.
+- **No Third-Party Python Dependencies**: The launcher and reader must not require external pip packages; they must run under standard Python 3.10+.
 
 ---
 
@@ -76,6 +76,12 @@ This project delivers a **public, Markdown-first skill and a minimal standard-li
 
 ### FR-6: Application Runtime Secrets
 - **FR-6.1**: Clearly distinguish management tokens (`KOYEB_API_KEY`) from application runtime secrets. Application secrets must be managed via Koyeb secret resources (`koyeb secrets`) and mounted to services by reference.
+
+### FR-7: Lossless Request Metrics Telemetry (Narrow Read-Only Exception)
+- **FR-7.1**: Provide a dedicated Python standard-library reader (`scripts/request_metrics.py`) that performs a fixed HTTPS GET query to `https://app.koyeb.com/v1/streams/metrics` for request throughput metrics (`name=HTTP_THROUGHPUT`).
+- **FR-7.2**: Accept required arguments `--service-id`, `--start`, and `--end` (timezone-aware ISO 8601 UTC), with optional `--step` (Go duration format, default `1h`) and `--env-file` (default `./.env`). Prohibit bare integer steps (`300`) and disallow speculative endpoints (e.g. `/v1/metrics`).
+- **FR-7.3**: Preserve raw JSON output retaining `null` vs `0` sample values and per-series status code family labels without performing automatic idle classification or cloud mutations.
+- **FR-7.4**: Report HTTP errors with status codes only; suppress sensitive authorization headers, tokens, and raw payloads.
 
 ---
 

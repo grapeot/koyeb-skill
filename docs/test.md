@@ -1,8 +1,8 @@
 # Test Strategy & Quality Assurance Plan
 
 **Project**: Koyeb Skill (`grapeot/koyeb-skill`)
-**Status**: Offline Suite and Read-Only CLI Smoke Verified
-**Target Test Suite**: `tests/test_koyeb_env.py`
+**Status**: 17 Offline Tests and Read-Only Smoke Checks Verified
+**Target Test Suites**: `tests/test_koyeb_env.py` (verified), `tests/test_request_metrics.py` (planned)
 **Evaluations**: `evals/evals.json`
 
 ---
@@ -11,16 +11,22 @@
 
 1. **Strict Offline Unit Testing**:
    - Automated unit tests must run offline without internet connectivity.
-   - External CLI tools (`koyeb`, `op`) must be intercepted with deterministic stubs or standard library mocks (`unittest.mock`).
+   - External CLI tools (`koyeb`, `op`) and HTTP networking (`urllib.request`) must be intercepted with deterministic stubs or standard library mocks (`unittest.mock`).
    - No automated tests may create, mutate, or delete live cloud infrastructure.
 2. **Zero Secret Leakage Verification**:
    - Every test case involving credentials must assert that secrets do not appear in command line arguments, process listings, log outputs, or error tracebacks.
 3. **Exit Code & Stream Preservation**:
    - Tests must assert that child process return codes and stdio streams pass through unaltered.
+4. **Lossless Telemetry Fixtures**:
+   - Test fixtures for metrics stream responses must explicitly preserve `null` sample values to verify that the reader does not mimic the native CLI's lossy flattening to `0`.
+5. **Architectural Guardrail**:
+   - No generic API client; only narrow lossless metric reader exception.
 
 ---
 
-## 2. Unit Test Matrix (`tests/test_koyeb_env.py`)
+## 2. Unit Test Matrix
+
+### 2.1 Launcher Test Suite (`tests/test_koyeb_env.py` — Verified)
 
 The unit test suite (`tests/test_koyeb_env.py`) uses Python's built-in `unittest` framework to validate `scripts/koyeb_env.py`. All 12 tests passed on 2026-10-02. Read-only CLI 5.12.0 smoke checks passed for credential resolution, resource inspection, service listing, and bounded lifecycle logs. Scenario prompts are authored, not cross-harness benchmark results.
 
@@ -42,6 +48,20 @@ The unit test suite (`tests/test_koyeb_env.py`) uses Python's built-in `unittest
 | `TC-SEC-03` | Security: Custom URL Flag | Forwarded args contain `--url` or `--url=...` | Terminated immediately with error; child process NOT spawned; exits code `2`. |
 | `TC-SEC-04` | Security: Ambient Token | Ambient `KOYEB_TOKEN` exists in parent shell | Ambient token overwritten by value resolved from current `.env` file. |
 | `TC-SEC-05` | Security: Argv Secret Check | Command line passed to child process inspected | Verified that secret token is never present in child `argv`. |
+
+### 2.2 Request Metrics Reader Test Suite (`tests/test_request_metrics.py` — Verified)
+
+Five standard-library reader tests mocking `urllib.request.urlopen` passed alongside the 12 launcher tests. Read-only smoke checks verified actual null, zero, and positive metric samples through the reader with .env/1Password authentication. No application endpoints were requested by these checks.
+
+| Test ID | Test Category | Target Behavior | Expected Outcome |
+| :--- | :--- | :--- | :--- |
+| `TC-METRIC-01` | Reader: Parameter Encoding | Query params built from `--service-id`, `--start`, `--end`, `--step 1h` | Exact URL constructed with `name=HTTP_THROUGHPUT`, `step=1h`, and encoded parameters. |
+| `TC-METRIC-02` | Reader: Step Forwarding | `--step 5m` | Forwards duration syntax unchanged; the API validates unsupported values. Bare numeric steps were rejected during read-only platform inspection. |
+| `TC-METRIC-03` | Reader: Timestamp Validation | Naive vs timezone-aware ISO 8601 strings | Rejects naive timestamps; accepts valid UTC timestamps (e.g. `2026-01-01T00:00:00Z`). |
+| `TC-METRIC-04` | Reader: Range Order | Start timestamp occurring after end timestamp | Rejects reversed range with clean error message. |
+| `TC-METRIC-05` | Reader: Null Preservation | Upstream JSON fixture contains `null` sample values | Raw JSON output emitted verbatim; asserts `null` values are NOT converted to `0`. |
+| `TC-METRIC-06` | Reader: HTTP Error Safety | Upstream server returns HTTP 401 or 500 | Reports HTTP status code only; asserts auth headers and tokens are suppressed. |
+| `TC-METRIC-07` | Reader: Auth Resolution | Imports credential functions from `scripts/koyeb_env.py` | Seamlessly resolves literal token or `op://` reference from `.env`. |
 
 ---
 
