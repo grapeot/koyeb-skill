@@ -4,14 +4,14 @@ An English public, Markdown-first skill repository designed to equip autonomous 
 
 This skill teaches agents reliable cloud inventory discovery, diagnostics, deployment, configuration, sleep/wake lifecycle management, instance scaling, custom domains, and secret operations with authoritative outcome verification.
 
-> **Project Phase: Implemented**
-> The root skill, five reference guides, credential launcher, and offline tests are implemented. All 12 offline tests passed; official CLI 5.12.0 read-only checks verified credential resolution, service inspection, listing, and bounded lifecycle log retrieval. Agent evaluation prompts are provided but have not been benchmarked across harnesses.
+> **Project Phase: Implemented & Evolving**
+> The root skill, six reference guides, credential launcher, and lossless request metrics reader are implemented. All 17 offline tests passed. Read-only smoke checks verified native CLI 5.12.0 operations and preservation of raw metric nulls, zero values, positive values, and labels. Agent evaluation prompts are provided but have not been benchmarked across harnesses.
 
 ---
 
 ## Architecture & Principles
 
-1. **Official CLI Authority**: Cloud operations are performed using the official [Koyeb CLI](https://github.com/koyeb/koyeb-cli) binary (verified baseline `v5.12.0`). Check installed command help when using other versions. The skill does not implement or maintain a custom Python API client or daemon.
+1. **Official CLI Authority**: Cloud operations are performed using the official [Koyeb CLI](https://github.com/koyeb/koyeb-cli) binary (verified baseline `v5.12.0`). Check installed command help when using other versions. The skill does not implement or maintain a generic Python API client or daemon. An explicit, narrow read-only exception is provided solely for `scripts/request_metrics.py` to retrieve lossless HTTP request telemetry streams where the native CLI performs lossy zero-flattening.
 2. **Minimal Standard-Library Launcher**: A lightweight Python launcher (`scripts/koyeb_env.py`) serves as a credential adapter. It parses `.env` files, resolves credentials, and delegates directly to the official CLI via standard subprocess execution without external dependencies.
 3. **Markdown-First Agent Guidance**: Operational intelligence resides in structured Markdown instructions under `skills/koyeb/`, employing progressive disclosure to keep agent context windows focused.
 4. **Strict Scope Separation**:
@@ -24,7 +24,7 @@ This skill teaches agents reliable cloud inventory discovery, diagnostics, deplo
 ## Prerequisites
 
 - **Python**: Python 3.10 or newer (standard library only; zero external package dependencies).
-- **Koyeb CLI**: Official [Koyeb CLI](https://github.com/koyeb/koyeb-cli) `v5.12.0` or higher installed in system `PATH` (or specified via `--koyeb-bin`). See [Koyeb CLI Installation](https://www.koyeb.com/docs/build-and-deploy/cli/installation).
+- **Koyeb CLI**: Official [Koyeb CLI](https://github.com/koyeb/koyeb-cli) `v5.12.0` or higher installed in system `PATH` (or specified via `--koyeb-bin`) for operational commands. Note: the narrow lossless request metrics reader (`scripts/request_metrics.py`) uses standard Python library only and does not require the `koyeb` binary. See [Koyeb CLI Installation](https://www.koyeb.com/docs/build-and-deploy/cli/installation).
 - **1Password CLI (Optional)**: `op` CLI installed and authenticated only if using `op://` credential references in `.env`.
 
 ---
@@ -48,6 +48,7 @@ To install this skill into an agent-enabled workspace (e.g., OpenCode, Claude Co
   - [`skills/koyeb/references/inspect.md`](skills/koyeb/references/inspect.md) — Inventory queries, status checking, logs, and JSON parsing.
   - [`skills/koyeb/references/changes.md`](skills/koyeb/references/changes.md) — Deployments, environment variables, `skip-build`, and scaling.
   - [`skills/koyeb/references/sleep.md`](skills/koyeb/references/sleep.md) — Light and deep sleep configurations, idle timeouts, and wake tests.
+  - [`skills/koyeb/references/metrics.md`](skills/koyeb/references/metrics.md) — Telemetry streaming, null vs. 0 semantics, and traffic diagnostics.
   - [`skills/koyeb/references/fleet.md`](skills/koyeb/references/fleet.md) — Multi-service orchestration and external runbook integration.
 
 ---
@@ -71,6 +72,14 @@ python3 scripts/koyeb_env.py --env-file /path/to/.env -- services describe examp
 
 # Stream service logs (--tail is a boolean flag)
 python3 scripts/koyeb_env.py -- services logs example-service --app example-app --tail
+
+# Explore native metrics (multiple JSON frames; null samples become 0)
+python3 scripts/koyeb_env.py -- metrics get --service example-app/example-service \
+  --start 2026-01-01T00:00:00Z --end 2026-01-02T00:00:00Z -o json
+
+# Keep nulls and labels when auditing request activity (use a resolved service ID)
+python3 scripts/request_metrics.py --service-id example-service-id \
+  --start 2026-01-01T00:00:00Z --end 2026-01-02T00:00:00Z --step 1h
 ```
 
 ### Supported `.env` Formats

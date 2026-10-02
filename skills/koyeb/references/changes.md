@@ -46,6 +46,18 @@ python3 scripts/koyeb_env.py -- services update example-app/example-service \
 - The `--override` flag completely replaces the entire service configuration with the provided arguments, stripping any unmentioned environment variables, routes, or ports.
 - **Rule**: Never use `--override` routinely. Use `--override` only when explicitly instructed to overwrite the complete specification.
 
+### Always-On Scaling & Sleep Flag Refusal
+When updating a service to remain continuously active (always-on):
+```bash
+# Configure always-on scaling (disables sleep)
+python3 scripts/koyeb_env.py -- services update example-app/example-service \
+  --min-scale 1 --max-scale 1 \
+  --skip-build --wait
+```
+- **CLI Flag Refusal Nuance**: The official Koyeb CLI **strictly disallows** sleep delay flags (`--light-sleep-delay` or `--deep-sleep-delay`, even set to `0`) when `--min-scale` is $\ge 1$. Supplying sleep flags alongside `--min-scale 1` causes the CLI to fail immediately with an error. Always omit sleep flags entirely when configuring always-on.
+- **Inspect `targets[]`**: Verify the updated scaling policy under `targets[]` in `services get example-app/example-service -o json`. Note that services with `--min-scale 0` in their live configuration may still be `HEALTHY` and functioning normally; never assume `min-scale 0` means a service is inactive or failing.
+- **Policy Precedence**: Sizing and always-on scaling choices are determined by explicit user tasks or project runbooks; the public skill does not impose application-specific defaults.
+
 ---
 
 ## 3. Deployment Mechanics: Rebuilds, `skip-build`, and `save-only`
@@ -56,7 +68,7 @@ When updating environment variables, scaling limits, or sleep delays that do not
 python3 scripts/koyeb_env.py -- services redeploy example-app/example-service --skip-build --wait
 ```
 - `--skip-build` instructs the Koyeb orchestrator to reuse the existing container image from the last successful deployment.
-- This creates a new deployment while bypassing the build stage; provisioning and health checks still take time.
+- This creates a new deployment while bypassing the build stage; provisioning and health checks still take time. Do not make unconditional zero-downtime promises; traffic shifts depend on healthcheck evaluations.
 
 ### B. Full Rebuilds
 - When updating Git branches, Dockerfile paths, build arguments, or application source code, do **not** pass `--skip-build`. A full build is required.
@@ -65,13 +77,15 @@ python3 scripts/koyeb_env.py -- services redeploy example-app/example-service --
 - Passing `--save-only` writes the definition changes to the Koyeb control plane but does **not** trigger a live deployment.
 - **Reporting Invariant**: Agents must never report a `--save-only` change as active or running in production. Live verification requires verifying that a deployment reached `HEALTHY`.
 
-### D. Synchronous Wait Flags
+### D. Synchronous Wait Flags & Snapshot Freshness
 Always specify `--wait` with a bounded `--wait-timeout` (e.g. `5m`) when programmatic verification is needed immediately:
 ```bash
 python3 scripts/koyeb_env.py -- services update example-app/example-service \
   --min-scale 1 --max-scale 3 \
   --skip-build --wait --wait-timeout 5m
 ```
+- **Snapshot Freshness Caveat**: When `--wait` returns, the printed service summary snapshot may still display the *previous* `active_deployment_id` if the orchestrator's promotion step is still finalizing.
+- **Verification Rule**: Read the new deployment by ID and refresh `services get` to verify health and the actual `active_deployment_id` before reporting the new version as live.
 
 ---
 

@@ -33,8 +33,14 @@ python3 scripts/koyeb_env.py -- services update example-app/example-service \
 
 Sleep features are subject to strict platform prerequisites:
 1. **Minimum Scale Zero (`--min-scale 0`)**: Sleep can **never** trigger if `--min-scale` is $\ge 1$.
-2. **Instance Type & Plan Eligibility**: Sleep support depends on current Koyeb plan tiers and instance families (standard microVMs vs dedicated GPUs/bare-metal). Do not make unconditional assertions that sleep is supported for every plan, GPU type, or legacy tier. Consult current official Koyeb documentation for eligible instance types.
-3. **Disabling Tiers**: Passing `0` to a delay flag disables that specific tier (e.g. `--deep-sleep-delay 0` keeps the service in Light Sleep indefinitely rather than transitioning to Deep Sleep).
+2. **Always-On Scaling & CLI Flag Refusal**: When configuring a service for always-on operation (`--min-scale 1`), **do not pass sleep delay flags** (`--light-sleep-delay` or `--deep-sleep-delay`, even set to `0`). The official Koyeb CLI strictly rejects sleep flags when `--min-scale` is $\ge 1$. Omit them entirely:
+   ```bash
+   python3 scripts/koyeb_env.py -- services update example-app/example-service \
+     --min-scale 1 --max-scale 1 --skip-build --wait
+   ```
+3. **Instance Type & Plan Eligibility**: Sleep support depends on current Koyeb plan tiers and instance families (standard microVMs vs dedicated GPUs/bare-metal). Do not make unconditional assertions that sleep is supported for every plan, GPU type, or legacy tier. Consult current official Koyeb documentation for eligible instance types.
+4. **Disabling Individual Tiers**: Passing `0` to a delay flag disables that specific tier (e.g. `--deep-sleep-delay 0` keeps the service in Light Sleep indefinitely rather than transitioning to Deep Sleep). This is only valid when `--min-scale 0`.
+5. **Live Targets Nuance**: Read the actual deployment definition when configuration is absent from the service response. An existing `min=0` configuration with empty targets may still be running; `min=0` alone is not proof of sleep. User tasks and project runbooks define policy, not a universal sleep default in this skill.
 
 ---
 

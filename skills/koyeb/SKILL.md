@@ -34,7 +34,7 @@ Explicit User Task > Applicable Project Policy/Runbook > Current Live Configurat
 ---
 
 ## 3. Launcher Execution Contract
-All Koyeb CLI invocations must execute through the zero-dependency launcher `scripts/koyeb_env.py` to prevent credential exposure in process argument tables (`argv`) or shell history:
+All Koyeb CLI commands must execute through the zero-dependency launcher `scripts/koyeb_env.py` (with an explicit narrow read-only exception for `scripts/request_metrics.py` to preserve raw null request telemetry) to prevent credential exposure in process argument tables (`argv`) or shell history:
 
 ```bash
 # Standard syntax (uses ./.env by default)
@@ -116,6 +116,19 @@ python3 scripts/koyeb_env.py -- domains get example.com -o json
 ```
 *Boundary*: External DNS, managed databases, and reverse proxies belong to project runbooks. Koyeb commands only mutate Koyeb resources.
 
+### F. Request Metrics & Telemetry
+Use native CLI for quick inspection and the lossless reader for automated zero-traffic classification:
+```bash
+# Native CLI metrics (chained JSON frames; maps raw nulls to 0)
+python3 scripts/koyeb_env.py -- metrics get --service example-app/example-service \
+  --start 2026-01-01T00:00:00Z --end 2026-01-01T01:00:00Z -o json
+
+# Lossless request metrics reader (preserves null vs 0 and per-series labels)
+python3 scripts/request_metrics.py --service-id example-service-id \
+  --start 2026-01-01T00:00:00Z --end 2026-01-01T01:00:00Z --step 1h
+```
+*Rule*: Native CLI maps upstream nulls to 0. Always use `scripts/request_metrics.py` when evaluating scale-to-zero eligibility or confirming inactivity.
+
 ---
 
 ## 5. Output Verification & Reporting Contract
@@ -146,4 +159,5 @@ For deep-dive instructions, edge cases, and failure modes, consult:
 - [`references/inspect.md`](references/inspect.md) — Inventory querying, JSON schemas, pagination caveats, and log diagnostics.
 - [`references/changes.md`](references/changes.md) — Service creation, updates, `skip-build`, secrets mounting, and rollbacks.
 - [`references/sleep.md`](references/sleep.md) — Light vs deep sleep mechanics, idle resets, latency metrics, and wake verification.
+- [`references/metrics.md`](references/metrics.md) — Metrics streaming, JSON frames, null vs. 0 semantics, and three-state classification.
 - [`references/fleet.md`](references/fleet.md) — Multi-service orchestration, batch updates, stop-on-failure policy, and runbooks.
